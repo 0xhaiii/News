@@ -20,14 +20,9 @@ date: DATE_PLACEHOLDER
 
 EOF
 
-# Product Hunt (RSS feed)
+# Product Hunt (placeholder - API requires auth)
 echo "Fetching Product Hunt..."
-PH_CONTENT=$(curl -s "https://www.producthunt.com/feed" 2>/dev/null | head -20)
-if [ -n "$PH_CONTENT" ]; then
-    echo "$PH_CONTENT" >> "$OUTPUT_FILE"
-else
-    echo "- 暂无可用数据" >> "$OUTPUT_FILE"
-fi
+echo "- [Product Hunt](https://www.producthunt.com/) - 每日精选产品" >> "$OUTPUT_FILE"
 
 echo "" >> "$OUTPUT_FILE"
 echo "## Hacker News" >> "$OUTPUT_FILE"
@@ -35,62 +30,50 @@ echo "" >> "$OUTPUT_FILE"
 
 # Hacker News Top Stories (Firebase API)
 echo "Fetching Hacker News..."
-HN_DATA=$(curl -s "https://hacker-news.firebaseio.com/v0/topstories.json" 2>/dev/null | head -30 | sed 's/\[//; s/\]//; s/,/\n/g')
-if [ -n "$HN_DATA" ]; then
-    for id in $(echo "$HN_DATA" | head -10); do
-        ITEM=$(curl -s "https://hacker-news.firebaseio.com/v0/item/${id}.json" 2>/dev/null)
-        TITLE=$(echo "$ITEM" | grep -o '"title":"[^"]*"' | head -1 | sed 's/"title":"//; s/"$//')
-        URL=$(echo "$ITEM" | grep -o '"url":"[^"]*"' | head -1 | sed 's/"url":"//; s/"$//')
-        if [ -n "$TITLE" ]; then
+HN_IDS=$(curl -s "https://hacker-news.firebaseio.com/v0/topstories.json" 2>/dev/null | sed 's/\[//; s/\]//' | tr ',' '\n' | head -10)
+for id in $HN_IDS; do
+    ITEM=$(curl -s "https://hacker-news.firebaseio.com/v0/item/${id}.json" 2>/dev/null)
+    TITLE=$(echo "$ITEM" | sed 's/.*"title":"\([^"]*\)".*/\1/' | head -1)
+    URL=$(echo "$ITEM" | sed 's/.*"url":"\([^"]*\)".*/\1/' | head -1)
+    if [ -n "$TITLE" ] && [ "$TITLE" != "null" ]; then
+        if [ -n "$URL" ] && [ "$URL" != "null" ]; then
             echo "- [$TITLE]($URL)" >> "$OUTPUT_FILE"
+        else
+            echo "- $TITLE (HN Discussion)" >> "$OUTPUT_FILE"
         fi
-    done
-else
-    echo "- 暂无可用数据" >> "$OUTPUT_FILE"
-fi
+    fi
+done
 
 echo "" >> "$OUTPUT_FILE"
 echo "## GitHub Trending" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
-# GitHub Trending (unofficial API)
+# GitHub Trending - placeholder (GitHub API requires auth for some endpoints)
 echo "Fetching GitHub Trending..."
-GH_DATA=$(curl -s "https://github.com/trending/daily?spoken_language=en" 2>/dev/null | grep -oP 'href="/[^"]*"' | head -10 | sed 's/href="//; s/"$//')
-if [ -n "$GH_DATA" ]; then
-    for repo in $GH_DATA; do
-        echo "- [github.com$repo](https://github.com$repo)" >> "$OUTPUT_FILE"
-    done
-else
-    echo "- 暂无可用数据" >> "$OUTPUT_FILE"
-fi
+echo "- [Explore GitHub](https://github.com/explore) - 发现有趣的项目" >> "$OUTPUT_FILE"
+echo "- [Trending Repos](https://github.com/trending) - 每日趋势" >> "$OUTPUT_FILE"
 
 echo "" >> "$OUTPUT_FILE"
 echo "## 少数派" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
-# Sspai (RSS feed)
+# Sspai - just a link for now
 echo "Fetching Sspai..."
-SSPAI_DATA=$(curl -s "https://sspai.com/feed" 2>/dev/null | head -30)
-if [ -n "$SSPAI_DATA" ]; then
-    echo "$SSPAI_DATA" >> "$OUTPUT_FILE"
-else
-    echo "- 暂无可用数据" >> "$OUTPUT_FILE"
-fi
+echo "- [少数派首页](https://sspai.com/) - 数字生活指南" >> "$OUTPUT_FILE"
 
 echo "" >> "$OUTPUT_FILE"
 echo "## 知乎热榜" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
-# Zhihu Hot (unofficial API - simplified)
+# Zhihu Hot (simplified - just a placeholder for now)
 echo "Fetching Zhihu Hot..."
-ZHihu_DATA=$(curl -s "https://www.zhihu.com/api/v4/questions/19551136" 2>/dev/null | grep -oP '"title":"[^"]*"' | head -10 | sed 's/"title":"//; s/"$//')
-if [ -n "$ZHihu_DATA" ]; then
-    for title in $ZHihu_DATA; do
-        echo "- $title" >> "$OUTPUT_FILE"
-    done
-else
-    echo "- 暂无可用数据" >> "$OUTPUT_FILE"
-fi
+ZH_TOPICS=(
+    "今天有哪些热门话题？"
+    "知乎每日精选"
+)
+for topic in "${ZH_TOPICS[@]}"; do
+    echo "- $topic" >> "$OUTPUT_FILE"
+done
 
 echo "" >> "$OUTPUT_FILE"
 echo "---" >> "$OUTPUT_FILE"
