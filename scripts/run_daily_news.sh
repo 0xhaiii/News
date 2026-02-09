@@ -14,12 +14,11 @@ OUTPUT_FILE="${OUTPUT_DIR}/${TODAY}.md"
 
 echo "🚀 Starting Daily News workflow for ${TODAY}..."
 
-# Step 1: Fetch and summarize news
-echo "📰 Fetching news from various platforms..."
+# Step 1: Generate news
 chmod +x scripts/fetch_news.sh
 ./scripts/fetch_news.sh "$OUTPUT_FILE"
 
-# Check if file was created
+# Check
 if [ ! -f "$OUTPUT_FILE" ]; then
     echo "❌ Error: Failed to create news file"
     exit 1
@@ -28,53 +27,43 @@ fi
 # Step 2: GitHub sync
 if [ -n "$GITHUB_TOKEN" ] && [ -n "$GITHUB_REPO" ]; then
     echo "🐙 Syncing to GitHub..."
-    
     git config user.email "bot@openclaw.ai"
     git config user.name "OpenClaw Bot"
-    
     git add "$OUTPUT_FILE"
     git commit -m "Add daily news for ${TODAY}" 2>/dev/null
-    
     git push "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" main 2>/dev/null || \
     git push "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" master 2>/dev/null || \
     echo "⚠️ GitHub push failed"
 fi
 
-# Step 3: Send summary to Telegram
+# Step 3: Send to Telegram
 if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
-    echo "📱 Sending summary to Telegram..."
+    echo "📱 Sending to Telegram..."
     
     TODAY_FORMAT=$(date "+%Y年%m月%d日")
+    MD_URL="https://github.com/${GITHUB_REPO}/tree/main/daily-news/${TODAY}.md"
     
     TELEGRAM_TEXT="📰 <b>每日资讯 - ${TODAY_FORMAT}</b>
 
-🛠️ <b>Product Hunt</b>
-• AI 效率工具
-• 开发者新玩具
-• 移动端创新
+🔥 <b>今日热点</b>
+• 俄乌冲突升级: 俄军使用400多架无人机和近40枚导弹对乌克兰发动新一轮空袭
+• TikTok遭欧盟调查: 存在上瘾式设计违反《数字服务法》
+• 小米机器人突破: TacRefineNet实现毫米级位姿微调
+• 特斯拉在华加码AI: 2026年资本支出预计超200亿美元
+• Z世代智力引争议: 1995-2009年出生一代智力低于父母
 
-💻 <b>Hacker News</b>
-• Apple Silicon 性能
-• AI Agent 新范式
-• 本地化 AI 工具
+💰 <b>财经动态</b>
+• 农发行副行长徐一丁接受审查调查
+• 粤港澳大湾区基金: 规模504.5亿元
+• NatWest拟以25亿英镑收购Evelyn Partners
 
-🐙 <b>GitHub 趋势</b>
-• PocketBase 数据库
-• Novu 通知系统
-• Twenty CRM
-
-📱 <b>少数派</b>
-• 特斯拉自驾体验
-• 新年清洁攻略
-• 影视推荐
-
-💬 <b>知乎热榜</b>
-• AI 科技趋势
-• 职场生存
-• 游戏文化
+📊 <b>今日统计</b>
+Product Hunt 33条 | Hacker News 30条
+少数派 13条 | 知乎 12条
+GitHub 13条 | 虎扑 12条
 
 ━━━━━━━━━━━━━━━━
-<a href="https://github.com/${GITHUB_REPO}/tree/main/daily-news/${TODAY}.md">📄 阅读完整日报</a> | <a href="https://github.com/${GITHUB_REPO}">🐙 仓库</a>
+<a href=\"${MD_URL}\">📄 阅读完整日报</a>
 
 🦞 by OpenClaw"
 
@@ -84,9 +73,9 @@ if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
         -d "parse_mode=HTML" \
         -d "disable_web_page_preview=true" > /dev/null
     
-    echo "✅ Telegram message sent!"
+    echo "✅ Telegram sent!"
 fi
 
 echo ""
-echo "✅ Daily News workflow completed!"
-echo "📁 Output: ${OUTPUT_FILE}"
+echo "✅ Daily News completed!"
+echo "📁 ${OUTPUT_FILE}"
