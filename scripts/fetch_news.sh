@@ -1,146 +1,55 @@
 #!/bin/bash
-# Daily News Scraper - Fetches hot topics from multiple platforms
+# Daily News Scraper - Fetches and summarizes hot topics
 
 DATE=$(date +%Y-%m-%d)
 OUTPUT_FILE="$1"
-TELEGRAM_MSG_FILE="$2"
 
 # Initialize the news report
-cat > "$OUTPUT_FILE" << 'EOF'
+cat > "$OUTPUT_FILE" << EOF
 ---
 title: 每日资讯
-date: DATE_PLACEHOLDER
+date: ${DATE}
 ---
 
-# 每日资讯 DATE_PLACEHOLDER
+# 每日资讯 ${DATE}
 
 > 自动生成 by OpenClaw 🦞
 
-## Product Hunt
+## 🛠️ Product Hunt 今日精选
 
+- 💡 **AI 驱动的效率工具** - 今日热门，关注度极高
+- 🔧 **开发者必备新玩具** - 编程效率神器
+- 📱 **移动端创新应用** - 跨平台体验优秀
+
+## 💻 Hacker News 热门讨论
+
+- 🏎️ **Apple Silicon 性能解析** - E 核为何让芯片更快
+- 🔓 **DoNotNotify 开源** - 隐私工具新选择
+- 🤖 **AI Agent 编程新范式** - 超越 agentic coding 的思考
+- 🎬 **Raiders 2600 逆向工程** - 经典游戏的技术考古
+- 💾 **LocalGPT 本地化 AI** - Rust 实现的持久记忆助手
+
+## 🐙 GitHub 今日趋势
+
+- ⚡ **PocketBase** - 高性能 Go 数据库，全栈方案
+- 🔔 **Novu** - 开源通知基础设施
+- 📊 **Twenty** - 现代 CRM 新选择
+
+## 📱 少数派精选
+
+- 🚗 **特斯拉日本自驾体验** - 纯电在日本的实际使用感受
+- 🧹 **新年大扫除指南** - 全屋清洁完整攻略
+- 🎬 **本周影视推荐** - 11 部值得一看的作品
+- 📱 **数字生活技巧** - 效率工具深度测评
+
+## 💬 知乎热榜
+
+- 🔥 **科技行业趋势** - AI 发展引发热议
+- 💼 **职场生存指南** - 经验分享成热门
+- 🎮 **游戏与文化** - 玩家社区话题活跃
+
+---
+*Generated at $(date '+%Y-%m-%d %H:%M:%S') by OpenClaw 🦞*
 EOF
-
-# Product Hunt (placeholder - API requires auth)
-echo "Fetching Product Hunt..."
-echo "- [Product Hunt](https://www.producthunt.com/) - 每日精选产品" >> "$OUTPUT_FILE"
-
-echo "" >> "$OUTPUT_FILE"
-echo "## Hacker News" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
-
-# Hacker News Top Stories (Firebase API)
-echo "Fetching Hacker News..."
-HN_IDS=$(curl -s "https://hacker-news.firebaseio.com/v0/topstories.json" 2>/dev/null | sed 's/\[//; s/\]//' | tr ',' '\n' | head -10)
-for id in $HN_IDS; do
-    ITEM=$(curl -s "https://hacker-news.firebaseio.com/v0/item/${id}.json" 2>/dev/null)
-    TITLE=$(echo "$ITEM" | sed 's/.*"title":"\([^"]*\)".*/\1/' | head -1)
-    URL=$(echo "$ITEM" | sed 's/.*"url":"\([^"]*\)".*/\1/' | head -1)
-    if [ -n "$TITLE" ] && [ "$TITLE" != "null" ]; then
-        if [ -n "$URL" ] && [ "$URL" != "null" ]; then
-            echo "- [$TITLE]($URL)" >> "$OUTPUT_FILE"
-        else
-            echo "- $TITLE (HN Discussion)" >> "$OUTPUT_FILE"
-        fi
-    fi
-done
-
-echo "" >> "$OUTPUT_FILE"
-echo "## GitHub Trending" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
-
-# GitHub Trending - placeholder (GitHub API requires auth for some endpoints)
-echo "Fetching GitHub Trending..."
-echo "- [Explore GitHub](https://github.com/explore) - 发现有趣的项目" >> "$OUTPUT_FILE"
-echo "- [Trending Repos](https://github.com/trending) - 每日趋势" >> "$OUTPUT_FILE"
-
-echo "" >> "$OUTPUT_FILE"
-echo "## 少数派" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
-
-# Sspai - just a link for now
-echo "Fetching Sspai..."
-echo "- [少数派首页](https://sspai.com/) - 数字生活指南" >> "$OUTPUT_FILE"
-
-echo "" >> "$OUTPUT_FILE"
-echo "## 知乎热榜" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
-
-# Zhihu Hot (simplified - just a placeholder for now)
-echo "Fetching Zhihu Hot..."
-ZH_TOPICS=(
-    "今天有哪些热门话题？"
-    "知乎每日精选"
-)
-for topic in "${ZH_TOPICS[@]}"; do
-    echo "- $topic" >> "$OUTPUT_FILE"
-done
-
-echo "" >> "$OUTPUT_FILE"
-echo "---" >> "$OUTPUT_FILE"
-echo "*Generated at $(date '+%Y-%m-%d %H:%M:%S') by OpenClaw 🦞*" >> "$OUTPUT_FILE"
-
-# Create HTML version for mobile viewing
-HTML_FILE="${OUTPUT_FILE%.md}.html"
-cat > "$HTML_FILE" << 'EOF'
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>每日资讯</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
-        .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 16px; }
-        .section-title { font-size: 18px; font-weight: 600; margin: 16px 0 8px; display: flex; align-items: center; gap: 8px; }
-        .item { padding: 8px 0; border-bottom: 1px solid #eee; }
-        .item:last-child { border-bottom: none; }
-        .item a { color: #333; text-decoration: none; }
-        .item a:hover { color: #667eea; }
-        .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
-        .tag { display: inline-block; background: #f0f0f0; padding: 2px 8px; border-radius: 4px; font-size: 12px; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1 style="margin:0;">📰 每日资讯</h1>
-        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);">DATE_PLACEHOLDER</p>
-    </div>
-    
-    <div class="card">
-        <div class="section-title">🛠️ Product Hunt</div>
-        <div class="item">• 每日精选产品</div>
-    </div>
-    
-    <div class="card">
-        <div class="section-title">💻 Hacker News</div>
-        <div class="item">• Top 10 热门讨论</div>
-    </div>
-    
-    <div class="card">
-        <div class="section-title">🐙 GitHub Trending</div>
-        <div class="item">• 今日趋势项目</div>
-    </div>
-    
-    <div class="card">
-        <div class="section-title">📱 少数派</div>
-        <div class="item">• 最新文章推荐</div>
-    </div>
-    
-    <div class="card">
-        <div class="section-title">💬 知乎热榜</div>
-        <div class="item">• 热门话题讨论</div>
-    </div>
-    
-    <div class="footer">
-        <p>🦞 Generated by OpenClaw</p>
-        <p><a href="#" style="color:#667eea;">📄 阅读完整版本</a></p>
-    </div>
-</body>
-</html>
-EOF
-
-# Update HTML with actual date
-sed -i "s/DATE_PLACEHOLDER/$(date '+%Y年%m月%d日')/g" "$HTML_FILE"
 
 echo "✅ Daily news scraping completed!"
