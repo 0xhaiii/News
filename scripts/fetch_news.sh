@@ -1,8 +1,13 @@
 #!/bin/bash
-# Daily News Scraper - Detailed summary with events
+# Daily News - Using Python for reliable JSON parsing
 
 DATE=$(date +%Y-%m-%d)
 OUTPUT_FILE="$1"
+
+echo "Fetching news with Python..."
+
+# Get HN IDs
+HN_IDS=$(curl -s "https://hacker-news.firebaseio.com/v0/topstories.json" 2>/dev/null | python3 -c "import sys,json; print(' '.join([str(x) for x in json.load(sys.stdin)[:8]]))")
 
 cat > "$OUTPUT_FILE" << EOF
 ---
@@ -16,43 +21,39 @@ date: ${DATE}
 
 ---
 
-## 🔥 今日热点
+## 💻 Hacker News 今日热门
 
-- **俄乌冲突升级**: 俄军使用400多架无人机和近40枚导弹对乌克兰发动新一轮空袭，乌方急需防空导弹
+EOF
 
-- **TikTok遭欧盟调查**: 欧盟委员会初步结论显示，TikTok因存在"上瘾式"设计违反了欧盟《数字服务法》
+for id in $HN_IDS; do
+    ITEM=$(curl -s "https://hacker-news.firebaseio.com/v0/item/${id}.json" 2>/dev/null)
+    TITLE=$(echo "$ITEM" | python3 -c "import sys,json; print(json.load(sys.stdin).get('title',''))" 2>/dev/null)
+    SCORE=$(echo "$ITEM" | python3 -c "import sys,json; print(json.load(sys.stdin).get('score',0))" 2>/dev/null)
+    URL=$(echo "$ITEM" | python3 -c "import sys,json; u=json.load(sys.stdin).get('url',''); print(u.split('//')[-1].split('/')[0] if u else 'news.ycombinator.com')" 2>/dev/null)
+    
+    if [ -n "$TITLE" ]; then
+        echo "- **$TITLE** ($URL · ⭐ $SCORE)" >> "$OUTPUT_FILE"
+    fi
+done
 
-- **小米机器人突破**: 公布具身智能领域研究成果TacRefineNet，可实现毫米级位姿微调
+cat >> "$OUTPUT_FILE" << EOF
 
-- **特斯拉在华加码AI**: 2026年计划在中国市场加大AI软硬件和能源领域投入，资本支出预计超200亿美元
+## 🔗 其他来源
 
-- **Z世代智力引争议**: 神经科学家研究称1995-2009年出生一代智力低于父母一代
-
-## 💰 财经动态
-
-- **农发行高层落马**: 农发行副行长徐一丁接受中央纪委国家监委审查调查
-
-- **粤港澳大湾区基金**: 规模504.5亿元，工银金融资产出资40亿元，建信金融资产出资10亿元
-
-- **NatWest收购案**: 英国NatWest Group拟以25亿英镑收购英国最大的财富管理公司之一Evelyn Partners
+- 🌍 BBC: https://www.bbc.com/news
+- 📱 Product Hunt: https://producthunt.com
+- 💬 知乎: https://www.zhihu.com/hot
 
 ---
 
-## 📊 今日统计
+## 📊 统计
 
-| 平台 | 今日抓取 |
-|------|----------|
-| Product Hunt | 33条 |
-| 华尔街见闻 | 30条 |
-| Hacker News | 30条 |
-| 少数派 | 13条 |
-| 虎扑 | 12条 |
-| GitHub | 13条 |
-| 知乎 | 12条 |
-| 澎湃新闻 | 20条 |
+| 来源 | 数量 |
+|------|------|
+| Hacker News | $(echo $HN_IDS | wc -w) 条 |
 
 ---
 *Generated at $(date '+%Y-%m-%d %H:%M:%S') by OpenClaw 🦞*
 EOF
 
-echo "✅ Daily news completed!"
+echo "✅ Done!"
